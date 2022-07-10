@@ -1,0 +1,188 @@
+<html>
+
+    <head>
+
+        <title>Spin Config Generator</title>
+
+        <link href="css/bootstrap.min.css" rel="stylesheet">
+        <link href="css/style.css" rel="stylesheet">
+
+        <script src="js/bootstrap.bundle.min.js"></script>
+        <script src='js/cytoscape.min.js'></script>
+
+    </head>
+
+    <body>
+
+        <div class="modal fade" id="decodeModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="staticBackdropLabel">Please Copy and Paste Config...</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <textarea id="decodeText", class="w-100" rows="20"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="decode();">Decode</button>
+                </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="controller" class="rounded p-1 shadow">
+
+            <div class="container-fluid">
+
+                <div class="row">
+
+                    <div class="col">
+                        <h2>Spin Config Creator</h2>
+                    </div>
+    
+                </div>
+
+                <div class="row">
+
+                    <div class="col">
+
+                        <ul class="nav nav-tabs">
+                            <li class="nav-item">
+                                <a href="#home" class="nav-link active" data-bs-toggle="tab">Home</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#node" class="nav-link" data-bs-toggle="tab">Node</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="#edge" class="nav-link" data-bs-toggle="tab">Edge</a>
+                            </li>
+                        </ul>
+                        <div class="tab-content">
+                            <div class="tab-pane fade show active" id="home">
+                                <div class="row pt-2">
+
+                                    <div class="col">
+                                        <h5>Instructions</h5>
+                                        <p>See <a>README.md</a></p>
+                                    </div>
+
+                                </div>
+                                <div class="row">
+
+                                    <div class="col">
+                                        <h5>Import</h5>
+                                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#decodeModal">Load</button>
+                                    </div>
+
+                                </div>
+                                <div class="row">
+
+                                    <div class="col">
+                                        <h5>Export</h5>
+                                        <button type="button" class="btn btn-success" onclick="graphToFile();">Export</button>
+                                    </div>
+
+                                </div>
+                            </div>
+                            <div class="tab-pane fade" id="node">
+                                <form id="addNode">
+                                    <div class="input-group my-3">
+                                        <span class="input-group-text" id="basic-addon2">X</span>
+                                        <input type="number" name="x" id="x-add" class="form-control" placeholder="6" aria-label="" aria-describedby="basic-addon2" value=0>
+                                        <span class="input-group-text" id="basic-addon2">Y</span>
+                                        <input type="number" name="y" id="y-add" class="form-control" placeholder="9" aria-label="" aria-describedby="basic-addon2" value=0>
+                                    </div>
+                                    <div class="input-group mb-3">
+                                        <span class="input-group-text" id="basic-addon2">Name: S</span>
+                                        <input type="text" name="name" id="name-add" class="form-control" placeholder="1" aria-label="" aria-describedby="basic-addon2" value="1">
+                                    </div>
+                                    <div class="input-group my-3">
+                                        <span class="input-group-text" id="basic-addon2">θ</span>
+                                        <input type="number" name="t-val" id="t-val" class="form-control" placeholder="0" aria-label="" aria-describedby="basic-addon2" value=0>
+                                        <span class="input-group-text" id="basic-addon2">Inc</span>
+                                        <input type="number" name="t-inc" id="t-inc" class="form-control" placeholder="0" aria-label="" aria-describedby="basic-addon2" value=0>
+                                    </div>
+                                    <div class="input-group my-3">
+                                        <span class="input-group-text" id="basic-addon2">ϕ</span>
+                                        <input type="number" name="p-val" id="p-val" class="form-control" placeholder="0" aria-label="" aria-describedby="basic-addon2" value=0>
+                                        <span class="input-group-text" id="basic-addon2">Inc</span>
+                                        <input type="number" name="p-inc" id="p-inc" class="form-control" placeholder="0" aria-label="" aria-describedby="basic-addon2" value=0>
+                                    </div>
+                                    <div class="btn-toolbar justify-content-between" role="toolbar" aria-label="Toolbar with button groups">
+                                        <div class="input-group">
+                                            <button class="btn btn-danger" onclick="removeElement(0); return false;">Remove</button>
+                                        </div>
+                                        <div class="input-group">
+                                            <button type="submit" class="btn btn-primary">Update</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="tab-pane fade" id="edge">
+                                <form id="addEdge" class="pt-2">
+                                    <h5>Src</h5>
+                                    <div class="input-group mb-3">
+                                        <span class="input-group-text" id="basic-addon2">Name: S</span>
+                                        <input type="text" name="name-src" id="name-src" class="form-control" placeholder="1" aria-label="" aria-describedby="basic-addon2" value="1">
+                                    </div>
+                                    <div class="input-group my-3">
+                                        <span class="input-group-text" id="basic-addon2">X</span>
+                                        <input type="number" name="x-src" id="x-src" class="form-control" placeholder="6" aria-label="" aria-describedby="basic-addon2" value=0>
+                                        <span class="input-group-text" id="basic-addon2">Y</span>
+                                        <input type="number" name="y-src" id="y-src" class="form-control" placeholder="9" aria-label="" aria-describedby="basic-addon2" value=0>
+                                    </div>
+                                    <h5>Dst</h5>
+                                    <div class="input-group mb-3">
+                                        <span class="input-group-text" id="basic-addon2">Name: S</span>
+                                        <input type="text" name="name-dst" id="name-dst" class="form-control" placeholder="2" aria-label="" aria-describedby="basic-addon2" value="2">
+                                    </div>
+                                    <div class="input-group my-3">
+                                        <span class="input-group-text" id="basic-addon2">X</span>
+                                        <input type="number" name="x-dst" id="x-dst" class="form-control" placeholder="6" aria-label="" aria-describedby="basic-addon2" value=1>
+                                        <span class="input-group-text" id="basic-addon2">Y</span>
+                                        <input type="number" name="y-dst" id="y-dst" class="form-control" placeholder="9" aria-label="" aria-describedby="basic-addon2" value=0>
+                                    </div>
+                                    <h5>Interaction</h5>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="i-type" id="i-type-1" checked value=1>
+                                        <label class="form-check-label" for="inlineRadio1">Nearest</label>
+                                      </div>
+                                      <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="i-type" id="i-type-2" value=2>
+                                        <label class="form-check-label" for="inlineRadio2">Next Nearest</label>
+                                      </div>
+                                    <div class="input-group mb-3">
+                                        <span class="input-group-text" id="basic-addon2">Sub</span>
+                                        <input type="text" name="sub-val" id="sub-val" class="form-control" placeholder="J1" aria-label="" aria-describedby="basic-addon2">
+                                    </div>
+                                    <div class="btn-toolbar justify-content-between" role="toolbar" aria-label="Toolbar with button groups">
+                                        <div class="input-group">
+                                            <button class="btn btn-danger" onclick="removeElement(1); return false;">Remove</button>
+                                        </div>
+                                        <div class="input-group">
+                                            <button type="submit" class="btn btn-primary">Update</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div id="cy"></div>
+        <script src='js/graph.js'></script>
+        <script src='js/encoder.js'></script>
+        <script src='js/decoder.js'></script>
+        
+    </body>
+
+
+</html>
