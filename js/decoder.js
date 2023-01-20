@@ -16,55 +16,45 @@
  */
 function decode(){
 
-    cy.elements().remove();
+    nodes = new vis.DataSet([]);
+    edges = new vis.DataSet([]);
 
     var lines = getLines();
+    var subs = new Map()
     if (lines == null) return; // user cancelled or did not enter anything
 
-    var edges = []
-    var subs = new Map()
+    console.log(lines);
 
-    var sectionCount = 0
-    for (let i = 0; i < lines.length; i++) {
-        var sectionNum = lines[i];
-        i++;
-        for (let j = 0; j < sectionNum; j++) {
-            var line = lines[i + j].split("#")[0].trim().split(" ");
-            switch (sectionCount) {
-                case 0: // add nodes
-                    addNode({"name": line[0].substring(1), "t-val": line[1], "t-inc": line[2], "p-val": line[3], "p-inc": line[4], "x": line[5], "y": line[6]}, 0);
-                    break;
-                case 1: // add edges
-
-                    var src = cy.$('#' + line[1]).data();
-                    var dst = cy.$('#' + line[2]).data();
-
-                    edges.push([line, src, dst])
-                    
-                    break;
-                case 2: // add subs
-                    subs[line[0]] = line[2]
-                    break;
-                default:
-                    console.log("Error: Unknown Section while parsing");
-                    break;
-            }
-        }
-        i += sectionNum - 1;
-        sectionCount++;
+    sectionIndexes = [
+        [0, parseInt(lines[0])],
+        [parseInt(lines[0]) + 1, parseInt(lines[parseInt(lines[0]) + 1])], 
+        [parseInt(lines[parseInt(lines[0]) + 1]) + 1 + parseInt(lines[0]) + 1, parseInt(lines[parseInt(lines[parseInt(lines[0]) + 1]) + 1 + parseInt(lines[0]) + 1])]
+    ]
+    
+    //Nodes
+    for (let i = sectionIndexes[0][0] + 1; i < sectionIndexes[0][0] + sectionIndexes[0][1] + 1; i++) {
+        var line = lines[i].split(" ")
+        upsertSite(line[0], parseFloat(line[5]), parseFloat(line[6]), parseFloat(line[1]), parseFloat(line[2]), parseFloat(line[3]), parseFloat(line[4]), 0)
+        
     }
 
-    console.log(subs);
-
-    // we need to add subs to edges, label issues will happen if we don't
-    for (let i = 0; i < edges.length; i++) {
-        var line = edges[i][0];
-        var src = edges[i][1];
-        var dst = edges[i][2];
-        var name = genEdgeName(cy, src.name, dst.name)
-        var data = { "name-src": src.name, "name-dst": dst.name, "x-src": src.x, "y-src": src.y, "x-dst": parseInt(src.x) + parseInt(line[3]), "y-dst": parseInt(src.y) + parseInt(line[4]), "i-type": line[5], "sub-val": subs[name] !== undefined ? subs[name] : ""}
-        addEdge(data);
+    //Subs
+    for (let i = sectionIndexes[2][0] + 1; i < sectionIndexes[2][0] + sectionIndexes[2][1] + 1; i++) {
+        var line = lines[i].split("=")
+        subs.set(line[0].trim(), line[1].trim())
     }
+
+    //Interactions
+    for (let i = sectionIndexes[1][0] + 1; i < sectionIndexes[1][0] + sectionIndexes[1][1] + 1; i++) {
+        var line = lines[i].split(" ")
+        upsertInteraction(line[1], line[2], line[3], line[4], line[6], line[7], subs.get(line[0].trim()) != undefined ? subs.get(line[0].trim()) : NaN, line[8])
+    }
+
+    console.log(nodes);
+
+    network.setData({nodes: nodes, edges: edges})
+    network.redraw()
+
 
 }
 
@@ -84,9 +74,22 @@ function getLines(){
 
     if (file == null || file == "") return null // nothing was enter or it was cancelled
 
-    file = file.split("\n").filter(function(line) {
-        return !(line.split(" ")[0].trim().substring(0,1) == "#" || line.trim().length == 0)
-    })
+
+    file = file.split("\n")
+    for (let index = file.length - 1; index >= 0 ; index--) {
+        var line = file[index].trim();
+        if (line.trim().startsWith("#") || line == ""){ file.splice(index, 1); continue }
+
+        for (let j = 0; j < line.length; j++) {
+            if(line.charAt(j) == "#"){
+                line = line.substring(0 ,j)
+                break
+            }
+        }
+
+        file[index] = line
+
+    }
 
     return file
 

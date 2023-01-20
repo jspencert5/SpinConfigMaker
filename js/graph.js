@@ -1,217 +1,194 @@
+/**
+ * 
+ * 
+ *  Init
+ * 
+ * 
+ * 
+ */
 
-// Manual Graph Postion Scaling
-var scale = 150
+var container = document.getElementById('networkBox');
 
-function colorizer(el, type){
-    if (el == "node"){
-        switch (type) {
-            case 0:
-                return {color: 'red', opacity: 1}
-            case 1:
-                return {color: 'darkred', opacity: 0.5}
-            default:
-                return {color: 'black', opacity: 1}
-        }
-    }else if (el == "edge"){
-        switch (type) {
-            case 0:
-                return 'grey'
-            default:
-                return 'black'
-        }
+var options = {
+    autoResize: true,
+    width: '100%',
+    height: '100%',
+    nodes: {
+        shape: 'circle',
+        font: '25px arial black'
+    },
+    edges: {
+      smooth: false,
+      shadow: true,
+      font: {
+        color: 'black',
+        size: 20, // px
+        face: 'arial',
+        background: 'white'
+      },
+    },
+    physics: false,
+    interaction: {
+      dragNodes: false,// do not allow dragging nodes
+      zoomView: true, // do not allow zooming
+      dragView: true  // do not allow dragging
     }
-    return 'green'
+  };
+
+// create an array with nodes
+var nodes = new vis.DataSet([]);
+
+// create an array with edges
+var edges = new vis.DataSet([]);
+
+var data = {
+    nodes: nodes,
+    edges: edges
+};
+
+// create a network
+var network = new vis.Network(container, data, options);
+
+// Set the coordinate system of Network such that it exactly
+// matches the actual pixels of the HTML canvas on screen
+// this must correspond with the width and height set for
+// the networks container element.
+
+/*network.moveTo({
+    position: {x: 0, y: 0},
+    offset: {x: -window.innerWidth/2, y: -window.innerHeight/2},
+    scale: 1,
+})*/
+
+network.redraw();
+
+network.on( 'click', function(properties) {
+
+    if (properties.nodes.length == 1){ // node clicked
+
+
+        var node = nodes.get(properties.nodes[0]);
+        console.log(node);
+
+        const { elements } = document.querySelector('#addNode')
+
+        elements.namedItem("x") && (elements.namedItem("x").value = (node["x"] / 250))
+        elements.namedItem("y") && (elements.namedItem("y").value = (node["y"] / -250))
+        elements.namedItem("name") && (elements.namedItem("name").value = node["label"].replace('S', ''))
+        elements.namedItem("t-val") && (elements.namedItem("t-val").value = node["theta"])
+        elements.namedItem("t-inc") && (elements.namedItem("t-inc").value = node["thetaInc"])
+        elements.namedItem("p-val") && (elements.namedItem("p-val").value = node["phi"])
+        elements.namedItem("p-inc") && (elements.namedItem("p-inc").value = node["phiInc"])
+
+        document.getElementById("siteTabPill").click()
+
+
+
+    }else if(properties.edges.length == 1 && properties.nodes.length == 0){
+
+        var edge = edges.get(properties.edges[0])
+
+        var from = nodes.get(edge.from)
+        var to = nodes.get(edge.to)
+
+        const { elements } = document.querySelector('#addEdge')
+
+        console.log(edge);
+
+        elements.namedItem("name-src") && (elements.namedItem("name-src").value = from["label"].replace('S', ''))
+        elements.namedItem("x-src") && (elements.namedItem("x-src").value = (from["x"] / 250))
+        elements.namedItem("y-src") && (elements.namedItem("y-src").value = (from["y"] / -250))
+        elements.namedItem("name-dst") && (elements.namedItem("name-dst").value = to["label"].replace('S', ''))
+        elements.namedItem("x-dst") && (elements.namedItem("x-dst").value = (to["x"] / 250))
+        elements.namedItem("y-dst") && (elements.namedItem("y-dst").value = (to["y"] / -250))
+        elements.namedItem("i-type") && (elements.namedItem("i-type").value = data.type)
+        elements.namedItem("sub-val") && (elements.namedItem("sub-val").value = edge["label"])
+
+        document.getElementById("jTabPill").click()
+
+
+    }
+
+});
+
+
+
+
+/**
+ * 
+ * 
+ *  Site Methods
+ * 
+ * 
+ * 
+ * 
+ */
+
+function generateSiteID(x, y){
+    return String(x) + "," + String(y)
 }
 
-var cy = cytoscape({
-    container: document.getElementById('cy'),
-    style: [{
-        selector: 'node',
-        style: {
-            shape: 'hexagon',
-            'background-color': 'data(color)',
-            'background-opacity': 'data(opacity)',
-            label: 'data(label)'
-        }
-    },{
-        selector: 'edge',
-        style: {
-            label: 'data(label)',
-            "text-background-opacity": 1,
-            "text-background-color": "#888",
-            "text-background-shape": "roundrectangle",
-            "text-background-padding": "5px"
-        }
-    },
-    {
-        selector: 'edge.nextNearest',
-        style: {
-            "curve-style": "unbundled-bezier",
-            "control-point-distances": 120,
-            "control-point-weights": 0.5
-        }
-    }],
-    elements: [],
-    layout: {
-        name: 'grid'
-    },
-    autoungrabify: true
-});
+function upsertSite(label, x, y, theta, thetaInc, phi, phiInc, type){
+    console.log(type);
+    id = generateSiteID(x,y)
+    x = parseFloat(x) * 250
+    y = parseFloat(y) * -250
+    nodes.update({"id": id, "label": label, "x": x, "y": y, "theta": theta, "thetaInc": thetaInc, "phi": phi, "phiInc": phiInc, "type": type, color: (type == 0 ? "#769FB6" :"#CAD9E2") })
+    network.redraw();
+}
 
-var currentNode;
-var currentEdge;
-
-cy.on('tap', 'node', function (evt) {
-    var n = cy.$('#' + evt.target.id());
-    //console.log(n.data());
-    currentNode = n;
-    
-    const { elements } = document.querySelector('#addNode')
-
-    for (const [ key, value ] of Object.entries(n.data()) ) {
-        const field = elements.namedItem(key)
-        field && (field.value = value)
-    }
-
-});
-
-cy.on('tap', 'edge', function (evt) {
-    //console.log("Edge: " + evt.target.id())
-
-    // fill form with clicked edge data
-    var e = cy.$('#' + evt.target.id());
-
-    currentEdge = e;
-
-    const { elements } = document.querySelector('#addEdge')
-
-    var data = e.data()
-
-    elements.namedItem("name-src") && (elements.namedItem("name-src").value = cy.$('#' + data.source).id().substring(1))
-    elements.namedItem("x-src") && (elements.namedItem("x-src").value = cy.$('#' + data.source).data('x'))
-    elements.namedItem("y-src") && (elements.namedItem("y-src").value = cy.$('#' + data.source).data('y'))
-    elements.namedItem("name-dst") && (elements.namedItem("name-dst").value = cy.$('#' + data.target).id().split("-")[0].substring(1))
-    elements.namedItem("x-dst") && (elements.namedItem("x-dst").value = cy.$('#' + data.target).data('x'))
-    elements.namedItem("y-dst") && (elements.namedItem("y-dst").value = cy.$('#' + data.target).data('y'))
-    elements.namedItem("i-type") && (elements.namedItem("i-type").value = data.type)
-    elements.namedItem("sub-val") && (elements.namedItem("sub-val").value = data.sub)
-
-});
-
-function handleSubmit(event) {
-
-    event.preventDefault();
-
-    const data = new FormData(event.target);
-    
-    const value = Object.fromEntries(data.entries());
-
-    console.log(value);
-
-    if (event.target.getAttribute('id') == "addNode"){addNode(value, 0)}
-    else if (event.target.getAttribute('id') == "addEdge"){addEdge(value)}
-
-  }
-
-
-  document.getElementById("addNode").addEventListener('submit', handleSubmit);
-  document.getElementById("addEdge").addEventListener('submit', handleSubmit);
-
-function addNode(data, type) {
-
-    // if type == 1 then we can base it off a template, but we need to make sure that template exists...
-
-    var pos = {x : data.x * scale, y: data.y * -scale}
-
-    var n = getNode(pos)
-
-    if (n != null){
-        console.log("Removing Old Node...");
-        cy.remove(n);
-    }
-
-    console.log(data)
-
-    cy.add({
-        data: Object.assign({ "id": "S" + data.name , "position": pos, name: data.name, x: pos.x / scale, y: pos.y / scale * -1, "p-inc": data["p-inc"], "p-val": data["p-val"], "t-inc": data["t-inc"], "t-val": data["t-val"], type: type, label: ("S" + data.name).split("-")[0]}, colorizer('node', type)),
-        position: pos
-    });
-
-    n = cy.$('#S' + data.name);
-    cy.center( n );
-    return n
+function removeSite(x,y){
+    nodes.remove(generateSiteID(x,y))
+    network.redraw();
 }
 
 
-function addEdge(data) {
+/**
+ * 
+ * 
+ *      Interaction Methods
+ *  
+ * 
+ * 
+ * 
+ */
 
-    console.log(data);
+function upsertInteraction(label1, x1, y1, label2, x2, y2, altLabel, nearest){
 
-    var srcPos = {x : data["x-src"] * scale, y: data["y-src"] * -scale}
-    var dstPos = {x : data["x-dst"] * scale, y: data["y-dst"]  * -scale}
+    label = altLabel =! NaN ? altLabel : "" // sub label
 
-    var dstID = data["name-dst"]
-
-    //check node at source
-    var m = getNode(srcPos)
-    if (m.data('type') == 1){
-        console.log("Error: Cannot Create Edge From Temporary Node");
-        return
-    }
-
-    //check for node at destination
-    var n = getNode(dstPos)
-
-    if (n == null) { // no node exists, lets create a temp one with the template node given
-        console.log("Creating 'Invisible' Node From Template...");
-        dstID = data["name-dst"] + "-o-" + (Math.random() + 1).toString(36).substring(7) 
-        n = addNode({name: dstID, x: dstPos.x / scale, y: dstPos.y / scale * -1}, 1) // will create "invisible" node outside for edge
-        dstID = "S" + dstID
-    }else{ // node does exist
-        if (n.data('type') != 1){ // check if it is a temp node
-            if (n.id().split('-')[0] == "S" + data["name-dst"]){ // permenant node exists on the other side with the same type
-                dstID = n.id()
-            }else{ // permenant node exists but wrong type, we cannot create this edge
-                console.log("Error: Node Mismatch, Check Types...");
-                n = null
+    if (nodes.get(generateSiteID(x2,y2)) == null && nodes.get(generateSiteID(x1,y1)) != null){ // create extralattice node
+        
+        //get node properties
+        options = undefined
+        nodes.forEach((node)=> {
+            if(node.label == label2) {
+                options = node
             }
-        }else{
-            dstID = n.id()
+        })
+
+        if (options != undefined) {
+            upsertSite(label2, x2, y2, options.theta, options.thetaInc,options. phi, options.phiInc, 1)
         }
+        
+        
     }
 
-    if (n != null){ // make sure that there were no errors when finding the destination
-
-        var e = getEdge(srcPos, dstPos) // get current edge
-
-        if (e != null){ // remove old edge if it exists
-            console.log("Removing Old Edge...");
-            cy.remove(e);
-        }
-
-        var eId = "S" + data["name-src"] + "-" + dstID
-
-        var edgeName = genEdgeName(cy, data["name-src"], dstID.split("-")[0].substring(1))
-
-        //Add Edge
-        cy.add({
-            data: {
-                id: eId, source: "S" + data["name-src"], target: dstID, sub: data["sub-val"], type: data["i-type"], name: edgeName, label: (data["sub-val"] != "" ? data["sub-val"]: edgeName)
-            },
-            classes: "" + (data["i-type"] == 1 ? "nearest" : "nextNearest")
-        });
-    
-        e = cy.$('#' + eId);
-        console.log(e.data('name'));
-        cy.center( e );
-
+    if(nodes.get(generateSiteID(x2,y2)) != null && nodes.get(generateSiteID(x1,y1)) != null){
+        edges.update({id: genInteractionID(label1, label2), "from": generateSiteID(x1,y1), "to": generateSiteID(x2,y2), "label": label, type: 0, "type": parseInt(nearest), smooth: nearest == 1 ? false : {enabled: true, type: (nearest == 2 ? 'curvedCCW' :'curvedCW'), roundness: 0.2}})
+        network.redraw();  
     }
 
 }
 
-function genEdgeName(graph, srcName, dstName){
+function removeInteraction(x1, y1, x2, y2){
+    edges.remove(generateSiteID(x1,y1) + "-" + generateSiteID(x2,y2))
+    network.redraw();
+}
+
+function genInteractionID(srcName, dstName){
     var edgeName = "J" + srcName + dstName
-    subs = graph.edges().each().map( edge => edge.data('name'));
+    subs = edges.get().map( edge => edge['id']);
     subMap = subs.reduce((acc, e) => acc.set(e, (acc.get(e) || 0) + 1), new Map());
     var num = 0
     while(subMap.has(edgeName + num)) num++;
@@ -220,22 +197,92 @@ function genEdgeName(graph, srcName, dstName){
 }
 
 
-function getNode(pos){
-    var n = null;
-    cy.nodes().each(function(node) {
-        if (node.position('y') == pos.y && node.position('x') == pos.x) n = node
+/**
+ * 
+ * 
+ * 
+ * Form Actions
+ * 
+ * 
+ * 
+ * 
+ */
+
+//Handler
+function handleSubmit(event) {
+
+    event.preventDefault();
+    const value = getFormData(event.target)
+
+    console.log(value);
+
+    if (event.target.getAttribute('id') == "addNode"){handleNewSite(value)}
+    else if (event.target.getAttribute('id') == "addEdge"){handleNewInteraction(value)}
+
+}
+
+function getFormData(target){
+
+    const formData = new FormData(target);
+    const data = Object.fromEntries(formData.entries());
+
+    Object.keys(data).forEach((key) => {
+        if (key != "name" && key != "name-src" &&  key != "name-dst" &&  key != "sub-val") data[key] = parseFloat(data[key])
     })
-    return n
+
+    return data
 }
 
-function getEdge(srcPos, dstPos){
-    var e = null
-    cy.edges().each(function(edge) {
-        if (edge.source().position('x') == srcPos.x && edge.source().position('y') == srcPos.y && edge.target().position('x') == dstPos.x && edge.target().position('y') == dstPos.y) e = edge
-    });
-    return e
+//Add Event Listener
+document.getElementById("addNode").addEventListener('submit', handleSubmit);
+document.getElementById("addEdge").addEventListener('submit', handleSubmit);
+
+//Handle Form Submit for new Site
+function handleNewSite(data){
+    upsertSite("S" + data["name"], data["x"], data["y"], data["t-val"], data["t-inc"], data["p-val"], data["p-inc"], 0)
 }
 
-function removeElement(type){
-    cy.remove((type ? currentEdge : currentNode ))
+//Handle Form Submit for new Interaction
+function handleNewInteraction(data){
+    upsertInteraction("S" + data["name-src"], data["x-src"], data["y-src"], "S" + data["name-dst"], data["x-dst"], data["y-dst"], data["sub-val"], data["nearest"])
 }
+
+//Handle Remove Site
+function handleRemoveSite(){
+    var form = document.getElementById("addNode")
+    data = getFormData(form)
+    removeSite(data["x"], data["y"])
+}
+
+//Handle Remove Interaction
+function handleRemoveInteraction(){
+    var form = document.getElementById("addEdge")
+    data = getFormData(form)
+    removeInteraction(data["x-src"], data["y-src"], data["x-dst"], data["y-dst"])
+}
+
+/**
+ * 
+ * 
+ *  Testing
+ * 
+ * 
+ */
+
+/*
+upsertSite("S1", 0,0,0,0,0,0,0)
+upsertSite("S2", 1,0,0,0,0,0,0)
+upsertSite("S3", 0,1,0,0,0,0,0)
+
+upsertInteraction("S1", 0, 0, "S2", 1, 0, "J1", 1)
+upsertInteraction("S1", 0, 0, "S3", 0, 1, "J1", 1)
+
+upsertInteraction("S2", 1, 0, "S1", 2, 0, "J1", 1)
+upsertInteraction("S3", 0, 1, "S1", 0, 2, "J1", 1)
+
+upsertInteraction("S1", 0, 0, "S1", 2, 0, "J1'", 2)
+upsertInteraction("S2", 1, 0, "S2", 3, 0, "J1'", 2)
+
+upsertInteraction("S1", 0, 0, "S3", 0, 2, "J1'", 3)
+upsertInteraction("S3", 0, 1, "S3", 0, 3, "J1'", 3)
+*/

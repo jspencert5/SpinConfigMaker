@@ -20,11 +20,11 @@ function graphToFile(){
     outputStr = addHeader(outputStr);
 
     //Add nodes to file string
-    var nodeStr = nodesToString(cy);
+    var nodeStr = nodesToString();
     outputStr = outputStr.concat('# Sites\n',nodeStr.length.toString(),'\n', nodeStr.join('\n'), '\n');
 
     //Add Edges To file string
-    var edgeStr = edgesToString(cy);
+    var edgeStr = edgesToString();
     outputStr = outputStr.concat('# Interactions\n', edgeStr[0].length.toString(),'\n', edgeStr[0].join('\n'),'\n');
 
     // Add Subs to file string
@@ -41,26 +41,29 @@ function graphToFile(){
  *  Desc: Takes a graph and returns an array of strings for each line in the file
  * 
  */
-function nodesToString(graph){
+function nodesToString(){
 
     var output = [];
 
-    graph.nodes().each(function(node) { // iterate through each node on the graph
+    var data = nodes.get()
 
-        var data = node.data(); // get node data
+    for (let i = 0; i < data.length; i++) {
+        const node = data[i];
         var line = ""; // define line
 
-        line += "S" + data.name + " "; // name
-        line += data["t-val"] + " "; // theta
-        line += data["t-inc"] + " "; // theta incremator
-        line += data["p-val"] + " "; // phi
-        line += data["p-inc"] + " "; // phi incrementor
-        line += data.x + " "; // x pos
-        line += data.y; // y pos
+        line += node["label"] + " "; // name
+        line += node["theta"] + " "; // theta
+        line += node["thetaInc"] + " "; // theta incremator
+        line += node["phi"] + " "; // phi
+        line += node["phiInc"] + " "; // phi incrementor
+        line += (node["x"] / 250) + " "; // x pos
+        line += (node["y"] / -250) + " "; // y pos
+        line += 0;// z pos, not used in this viewer
 
-        if (data.type == 0) output.push(line); // add line to output, only for actual nodes
-
-    })
+        if (node["type"] == 0){
+             output.push(line); // add line to output, only for actual nodes
+        }
+    }
 
     return output;
 }
@@ -71,39 +74,40 @@ function nodesToString(graph){
  *  Desc: Takes a graph and returns a 2D array of strings for each line in the file for interactions and subs
  * 
  */
-function edgesToString(graph){
+function edgesToString(){
     
     var output = [];
     var subs = []
 
-    graph.edges().each(function(edge) {
+    edges.forEach(function(edge) {
 
-        var data = edge.data();
         var line = "";
 
-        console.log(data);
+        console.log(edge);
 
-        var src = graph.$('#' + data.source).data();
-        var dst = graph.$('#' + data.target).data();
+        var src = nodes.get(edge.from)
+        var dst = nodes.get(edge.to)
 
         console.log(src);
         console.log(dst);
 
-        var edgeName = data.name
-        var srcName = "S" + src.name
-        var dstName = "S" + dst.name.split("-")[0]
-        var xDist = dst.x - src.x
-        var yDist = dst.y - src.y
+        var edgeName = edge.id
+        var srcName = src.label
+        var dstName = dst.label
 
         line += edgeName + " "
         line += srcName + " " // source
+        line += (src.x / 250) + " "
+        line += (src.y / -250) + " "
+        line += 0 + " "
         line += dstName + " " // destination
-        line += xDist + " " // x
-        line += yDist + " " // y
-        line += data.type // interaction type
+        line += (dst.x / 250) +  " "
+        line += (dst.y / -250) + " "
+        line += 0 + " "
+        line += edge.type // interaction type
 
         output.push(line);
-        if (data.sub != "" ) subs.push(edgeName + " = " + data.sub)
+        if (edge.label != "" ) subs.push(edgeName + " = " + edge.label)
         
     });
 
@@ -140,7 +144,9 @@ function addHeader(str){
 
     str = str.concat(`#
 #
-#   Configuration
+#   aSpin Configuration
+#   Created: ` + getFullTimestamp() + `
+#   
 #
 #
 `)
@@ -148,6 +154,13 @@ function addHeader(str){
     return str
 
 }
+
+function getFullTimestamp () {
+    const pad = (n,s=2) => (`${new Array(s).fill(0)}${n}`).slice(-s);
+    const d = new Date();
+    
+    return `${pad(d.getFullYear(),4)}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.${pad(d.getMilliseconds(),3)}`;
+  }
 
 /**
  * 
