@@ -31,7 +31,9 @@ function graphToFile(){
     outputStr = outputStr.concat('# Subsitutions\n',edgeStr[1].length.toString(),'\n', edgeStr[1].join('\n'),'\n');
 
     //Download File
-    download("config.txt", outputStr);
+    let fileName = prompt("Please the name for the file to save", "aSpin-Config");
+
+    download(fileName != null ? fileName + ".txt" : "config.txt", outputStr);
 
 }
 
@@ -145,8 +147,8 @@ function addHeader(str){
     str = str.concat(`#
 #
 #   aSpin Configuration
-#   Created: ` + getFullTimestamp() + `
-#   
+#   Created At: ` + getFullTimestamp() + `
+#   Developed by James Taintor
 #
 #
 `)

@@ -68,7 +68,7 @@ network.on( 'click', function(properties) {
 
 
         var node = nodes.get(properties.nodes[0]);
-        console.log(node);
+        //console.log(node);
 
         const { elements } = document.querySelector('#addNode')
 
@@ -93,7 +93,7 @@ network.on( 'click', function(properties) {
 
         const { elements } = document.querySelector('#addEdge')
 
-        console.log(edge);
+        //console.log(edge);
 
         elements.namedItem("name-src") && (elements.namedItem("name-src").value = from["label"].replace('S', ''))
         elements.namedItem("x-src") && (elements.namedItem("x-src").value = (from["x"] / 250))
@@ -101,7 +101,7 @@ network.on( 'click', function(properties) {
         elements.namedItem("name-dst") && (elements.namedItem("name-dst").value = to["label"].replace('S', ''))
         elements.namedItem("x-dst") && (elements.namedItem("x-dst").value = (to["x"] / 250))
         elements.namedItem("y-dst") && (elements.namedItem("y-dst").value = (to["y"] / -250))
-        elements.namedItem("i-type") && (elements.namedItem("i-type").value = data.type)
+        elements.namedItem("i-type") && (elements.namedItem("i-type").value =  edge["type"])
         elements.namedItem("sub-val") && (elements.namedItem("sub-val").value = edge["label"])
 
         document.getElementById("jTabPill").click()
@@ -137,8 +137,9 @@ function upsertSite(label, x, y, theta, thetaInc, phi, phiInc, type){
     network.redraw();
 }
 
-function removeSite(x,y){
-    nodes.remove(generateSiteID(x,y))
+function removeSite(){
+    nodes.remove(network.getSelectedNodes())
+    edges.remove(network.getSelectedEdges())
     network.redraw();
 }
 
@@ -175,14 +176,22 @@ function upsertInteraction(label1, x1, y1, label2, x2, y2, altLabel, nearest){
     }
 
     if(nodes.get(generateSiteID(x2,y2)) != null && nodes.get(generateSiteID(x1,y1)) != null){
-        edges.update({id: genInteractionID(label1, label2), "from": generateSiteID(x1,y1), "to": generateSiteID(x2,y2), "label": label, type: 0, "type": parseInt(nearest), smooth: nearest == 1 ? false : {enabled: true, type: (nearest == 2 ? 'curvedCCW' :'curvedCW'), roundness: 0.2}})
+        
+        var id = undefined
+        edges.forEach((edge)=>{
+            if (edge.from == generateSiteID(x1,y1) && edge.to == generateSiteID(x2,y2)){
+                id = edge.id
+            }
+        })
+
+        edges.update({id: id == undefined ? genInteractionID(label1.substring(1), label2.substring(1)) : id, "from": generateSiteID(x1,y1), "to": generateSiteID(x2,y2), "label": label, type: 0, "type": parseInt(nearest), smooth: nearest == 1 ? false : {enabled: true, type: (nearest == 2 ? 'curvedCCW' :'curvedCW'), roundness: 0.2}})
         network.redraw();  
     }
 
 }
 
-function removeInteraction(x1, y1, x2, y2){
-    edges.remove(generateSiteID(x1,y1) + "-" + generateSiteID(x2,y2))
+function removeInteraction(){
+    edges.remove(network.getSelectedEdges())
     network.redraw();
 }
 
@@ -214,7 +223,7 @@ function handleSubmit(event) {
     event.preventDefault();
     const value = getFormData(event.target)
 
-    console.log(value);
+    //console.log(value);
 
     if (event.target.getAttribute('id') == "addNode"){handleNewSite(value)}
     else if (event.target.getAttribute('id') == "addEdge"){handleNewInteraction(value)}
@@ -244,7 +253,7 @@ function handleNewSite(data){
 
 //Handle Form Submit for new Interaction
 function handleNewInteraction(data){
-    upsertInteraction("S" + data["name-src"], data["x-src"], data["y-src"], "S" + data["name-dst"], data["x-dst"], data["y-dst"], data["sub-val"], data["nearest"])
+    upsertInteraction("S" + data["name-src"], data["x-src"], data["y-src"], "S" + data["name-dst"], data["x-dst"], data["y-dst"], data["sub-val"], data["i-type"])
 }
 
 //Handle Remove Site
@@ -258,7 +267,7 @@ function handleRemoveSite(){
 function handleRemoveInteraction(){
     var form = document.getElementById("addEdge")
     data = getFormData(form)
-    removeInteraction(data["x-src"], data["y-src"], data["x-dst"], data["y-dst"])
+    removeInteraction()
 }
 
 /**

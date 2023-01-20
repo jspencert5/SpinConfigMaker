@@ -16,15 +16,15 @@
  */
 function decode(){
 
-    nodes = new vis.DataSet([]);
-    edges = new vis.DataSet([]);
+
 
     var lines = getLines();
     var subs = new Map()
     if (lines == null) return; // user cancelled or did not enter anything
 
-    console.log(lines);
-
+    nodes = new vis.DataSet([]);
+    edges = new vis.DataSet([]);
+    
     sectionIndexes = [
         [0, parseInt(lines[0])],
         [parseInt(lines[0]) + 1, parseInt(lines[parseInt(lines[0]) + 1])], 
@@ -47,10 +47,8 @@ function decode(){
     //Interactions
     for (let i = sectionIndexes[1][0] + 1; i < sectionIndexes[1][0] + sectionIndexes[1][1] + 1; i++) {
         var line = lines[i].split(" ")
-        upsertInteraction(line[1], line[2], line[3], line[4], line[6], line[7], subs.get(line[0].trim()) != undefined ? subs.get(line[0].trim()) : NaN, line[8])
+        upsertInteraction(line[1], line[2], line[3], line[5], line[6], line[7], subs.get(line[0].trim()) != undefined ? subs.get(line[0].trim()) : NaN, line[9])
     }
-
-    console.log(nodes);
 
     network.setData({nodes: nodes, edges: edges})
     network.redraw()
